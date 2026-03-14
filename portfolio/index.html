@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIDA | AI Developer Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <!-- System Boot Overlay -->
+    <div class="boot-overlay">
+        <div class="boot-content">
+            <div class="boot-logo">
+                <i class="fas fa-robot"></i>
+                <span>SYSTEM INITIALIZING</span>
+            </div>
+            <div class="boot-lines">
+                <div class="boot-line">Loading core modules...</div>
+                <div class="boot-line">Initializing neural network...</div>
+                <div class="boot-line">Connecting to Rida's portfolio...</div>
+                <div class="boot-line">Access granted.</div>
+            </div>
+            <div class="boot-progress">
+                <div class="boot-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-core"></div>
+    <div class="cursor-ring"></div>
+    <div class="cursor-trail"></div>
+
+    <!-- Scan Line Effect -->
+    <div class="scan-lines"></div>
+
+    <!-- Particle Network Canvas -->
+    <canvas id="network-canvas"></canvas>
+
+    <!-- Cyber Grid Floor -->
+    <div class="cyber-floor">
+        <div class="grid-floor"></div>
+    </div>
+
+    <!-- HUD Overlay -->
+    <div class="hud-overlay">
+        <div class="hud-corner top-left">
+            <div class="hud-lines"></div>
+            <span class="hud-text">SYS.ONLINE</span>
+        </div>
+        <div class="hud-corner top-right">
+            <div class="hud-lines"></div>
+            <span class="hud-text" id="clock">00:00:00</span>
+        </div>
+        <div class="hud-corner bottom-left">
+            <div class="hud-lines"></div>
+            <span class="hud-text">RIDA.AI v2.0</span>
+        </div>
+        <div class="hud-corner bottom-right">
+            <div class="hud-lines"></div>
+            <span class="hud-text">SECURE CONNECTION</span>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="nav-brand">
+            <div class="brand-icon">
+                <i class="fas fa-microchip"></i>
+            </div>
+            <span class="brand-text">RIDA<span class="brand-dot">.</span>AI</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#home" class="nav-link active" data-text="HOME" data-i18n="home">HOME</a></li>
+            <li><a href="#about" class="nav-link" data-text="ABOUT" data-i18n="about">ABOUT</a></li>
+            <li><a href="#skills" class="nav-link" data-text="SKILLS" data-i18n="skills">SKILLS</a></li>
+            <li><a href="#timeline" class="nav-link" data-text="TIMELINE" data-i18n="timeline">TIMELINE</a></li>
+            <li><a href="#projects" class="nav-link" data-text="PROJECTS" data-i18n="projects">PROJECTS</a></li>
+            <li><a href="#terminal" class="nav-link" data-text="TERMINAL" data-i18n="terminal">TERMINAL</a></li>
+            <li><a href="#contact" class="nav-link" data-text="CONTACT" data-i18n="contact">CONTACT</a></li>
+        </ul>
+        <a href="#contact" class="hire-btn">
+            <span class="btn-glow"></span>
+            <span class="btn-text" data-i18n="hire">HIRE ME</span>
+        </a>
+        <button class="nav-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="hero-bg-effects">
+            <div class="glow-orb orb-1"></div>
+            <div class="glow-orb orb-2"></div>
+            <div class="glow-orb orb-3"></div>
+        </div>
+
+        <div class="hero-content">
+            <!-- 3D Robot Container -->
+            <div id="robot-canvas-container">
+                <div class="glow-ring-1"></div>
+                <div class="glow-ring-2"></div>
+                <div class="robot-interaction-hint">Right-click to interact</div>
+                <div class="robot-sound-waves">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
+            </div>
+
+            <!-- Terminal Display -->
+            <div class="terminal-display">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">rida_system.exe</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-line">
+                        <span class="prompt">root@rida:~$</span>
+                        <span class="command typing-text"></span>
+                        <span class="cursor">_</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Actions -->
+            <div class="hero-actions">
+                <a href="#projects" class="action-btn primary">
+                    <span class="btn-icon"><i class="fas fa-rocket"></i></span>
+                    <span class="btn-label" data-i18n="view_projects">View Projects</span>
+                    <div class="btn-shine"></div>
+                </a>
+                <a href="#contact" class="action-btn secondary">
+                    <span class="btn-icon"><i class="fas fa-envelope"></i></span>
+                    <span class="btn-label" data-i18n="contact_me">Contact Me</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Floating Tech Elements -->
+        <div class="floating-tech">
+            <div class="tech-item" style="--delay:0s;--x:10%;--y:20%"><i class="fab fa-html5"></i></div>
+            <div class="tech-item" style="--delay:0.5s;--x:85%;--y:15%"><i class="fab fa-css3-alt"></i></div>
+            <div class="tech-item" style="--delay:1s;--x:15%;--y:70%"><i class="fab fa-js"></i></div>
+            <div class="tech-item" style="--delay:1.5s;--x:80%;--y:75%"><i class="fab fa-react"></i></div>
+            <div class="tech-item" style="--delay:2s;--x:5%;--y:45%"><i class="fab fa-php"></i></div>
+            <div class="tech-item" style="--delay:2.5s;--x:90%;--y:50%"><i class="fas fa-database"></i></div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator">
+            <div class="scroll-mouse">
+                <div class="scroll-wheel"></div>
+            </div>
+            <span class="scroll-text">INITIALIZE SCROLL</span>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">MODULE 01</span>
+                <h2 class="section-title">
+                    <span class="title-glitch" data-text="IDENTITY" data-i18n="identity">IDENTITY</span>
+                    <span class="title-highlight" data-i18n="profile">PROFILE</span>
+                </h2>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-visual">
+                    <div class="hologram-container">
+                        <div class="hologram-ring ring-1"></div>
+                        <div class="hologram-ring ring-2"></div>
+                        <div class="hologram-ring ring-3"></div>
+                        <div class="hologram-core">
+                            <i class="fas fa-user-astronaut"></i>
+                        </div>
+                        <div class="hologram-data">
+                            <span>NAME: RIDA BENMAZOUZU</span>
+                            <span>ROLE: WEB DEVELOPER</span>
+                            <span>STATUS: ACTIVE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="about-content">
+                    <div class="info-panel">
+                        <div class="panel-header">
+                            <i class="fas fa-info-circle"></i>
+                            <span data-i18n="system_bio">SYSTEM BIO</span>
+                        </div>
+                        <div class="panel-body">
+                            <p class="highlight-text">
+                                <span class="neon-cyan">></span> Passionate Web Developer building the future of the web.
+                            </p>
+                            <p>
+                                My journey began with the fundamentals of programming, diving deep into 
+                                <span class="neon-purple">C programming</span> and mastering the 
+                                <span class="neon-purple">Linux</span> operating system. This foundation 
+                                ignited my passion for creating digital experiences.
+                            </p>
+                            <p>
+                                Today, I'm focused on building modern web applications while exploring 
+                                <span class="neon-cyan">cybersecurity technologies</span> to secure the digital future.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-code"></i></div>
+                            <div class="stat-value" data-count="10000">0</div>
+                            <div class="stat-label" data-i18n="loc">Lines of Code</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fab fa-github"></i></div>
+                            <div class="stat-value" id="github-repos" data-count="3">0</div>
+                            <div class="stat-label" data-i18n="github_repos">GitHub Repos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-project-diagram"></i></div>
+                            <div class="stat-value" data-count="3">0</div>
+                            <div class="stat-label" data-i18n="projects_built">Projects Built</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-coffee"></i></div>
+                            <div class="stat-value" data-count="999">0</div>
+                            <div class="stat-label" data-i18n="coffee">Cups of Coffee</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="skills-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">MODULE 02</span>
+                <h2 class="section-title">
+                    <span class="title-glitch" data-text="CAPABILITIES">CAPABILITIES</span>
+                    <span class="title-highlight">SKILL MATRIX</span>
+                </h2>
+            </div>
+
+            <div class="skills-grid">
+                <div class="skill-item" data-skill="95">
+                    <div class="skill-icon"><i class="fab fa-html5"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">HTML5</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">95%</span>
+                    </div>
+                </div>
+
+                <div class="skill-item" data-skill="90">
+                    <div class="skill-icon"><i class="fab fa-css3-alt"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">CSS3</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">90%</span>
+                    </div>
+                </div>
+
+                <div class="skill-item" data-skill="85">
+                    <div class="skill-icon"><i class="fab fa-js"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">JAVASCRIPT</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">85%</span>
+                    </div>
+                </div>
+
+                <div class="skill-item" data-skill="80">
+                    <div class="skill-icon"><i class="fab fa-php"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">PHP</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">80%</span>
+                    </div>
+                </div>
+
+                <div class="skill-item" data-skill="75">
+                    <div class="skill-icon"><i class="fab fa-react"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">REACT</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">75%</span>
+                    </div>
+                </div>
+
+                <div class="skill-item" data-skill="85">
+                    <div class="skill-icon"><i class="fas fa-database"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">SQL</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">85%</span>
+                    </div>
+                </div>
+
+                <div class="skill-item" data-skill="70">
+                    <div class="skill-icon"><i class="fab fa-linux"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">LINUX</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">70%</span>
+                    </div>
+                </div>
+
+                <div class="skill-item" data-skill="75">
+                    <div class="skill-icon"><i class="fas fa-code"></i></div>
+                    <div class="skill-info">
+                        <span class="skill-name">C PROGRAMMING</span>
+                        <div class="skill-bar">
+                            <div class="skill-fill"></div>
+                            <div class="skill-glow"></div>
+                        </div>
+                        <span class="skill-percent">75%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section id="timeline" class="timeline-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">MODULE 03</span>
+                <h2 class="section-title">
+                    <span class="title-glitch" data-text="CHRONOLOGY">CHRONOLOGY</span>
+                    <span class="title-highlight">DEV JOURNEY</span>
+                </h2>
+            </div>
+
+            <div class="timeline-container">
+                <div class="timeline-line">
+                    <div class="timeline-progress"></div>
+                </div>
+
+                <div class="timeline-item" data-year="2023">
+                    <div class="timeline-node">
+                        <div class="node-pulse"></div>
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <div class="timeline-card">
+                        <div class="card-date">2023</div>
+                        <h3 class="card-title">Started Learning Programming</h3>
+                        <p class="card-desc">Began the journey into software development, exploring algorithms and problem-solving fundamentals.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item" data-year="2024">
+                    <div class="timeline-node">
+                        <div class="node-pulse"></div>
+                        <i class="fab fa-cuttlefish"></i>
+                    </div>
+                    <div class="timeline-card">
+                        <div class="card-date">2024</div>
+                        <h3 class="card-title">Learned C & Linux Basics</h3>
+                        <p class="card-desc">Mastered C programming and Linux system administration through intensive training at 1337 Coding School.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item" data-year="2025">
+                    <div class="timeline-node active">
+                        <div class="node-pulse"></div>
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="timeline-card">
+                        <div class="card-date">2025</div>
+                        <h3 class="card-title">Building Web Applications</h3>
+                        <p class="card-desc">Creating full-stack web applications with modern technologies and frameworks.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item future" data-year="FUTURE">
+                    <div class="timeline-node">
+                        <div class="node-pulse"></div>
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="timeline-card">
+                        <div class="card-date">FUTURE</div>
+                        <h3 class="card-title">Exploring Cybersecurity</h3>
+                        <p class="card-desc">Diving into cybersecurity technologies to build secure and resilient systems for tomorrow.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="projects-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">MODULE 04</span>
+                <h2 class="section-title">
+                    <span class="title-glitch" data-text="PROJECTS">PROJECTS</span>
+                    <span class="title-highlight">DEPLOYED SYSTEMS</span>
+                </h2>
+            </div>
+
+            <div class="projects-showcase">
+                <div class="project-card">
+                    <div class="card-frame">
+                        <div class="frame-corner tl"></div>
+                        <div class="frame-corner tr"></div>
+                        <div class="frame-corner bl"></div>
+                        <div class="frame-corner br"></div>
+                    </div>
+                    <div class="project-visual">
+                        <div class="project-icon">
+                            <i class="fas fa-archive"></i>
+                        </div>
+                        <div class="project-hologram"></div>
+                    </div>
+                    <div class="project-info">
+                        <h3 class="project-name">Smart Archive</h3>
+                        <p class="project-desc">A platform for storing and managing digital documents securely.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">PHP</span>
+                            <span class="tech-tag">SQL</span>
+                            <span class="tech-tag">JS</span>
+                        </div>
+                        <a href="#" class="project-link">
+                            <span>View System</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="project-card featured">
+                    <div class="card-frame">
+                        <div class="frame-corner tl"></div>
+                        <div class="frame-corner tr"></div>
+                        <div class="frame-corner bl"></div>
+                        <div class="frame-corner br"></div>
+                    </div>
+                    <div class="project-visual">
+                        <div class="project-icon">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <div class="project-hologram"></div>
+                    </div>
+                    <div class="project-info">
+                        <h3 class="project-name">Fitness Platform</h3>
+                        <p class="project-desc">A modern fitness platform for workouts and personal trainers.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">React</span>
+                            <span class="tech-tag">Node.js</span>
+                            <span class="tech-tag">CSS3</span>
+                        </div>
+                        <a href="#" class="project-link">
+                            <span>View System</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="card-frame">
+                        <div class="frame-corner tl"></div>
+                        <div class="frame-corner tr"></div>
+                        <div class="frame-corner bl"></div>
+                        <div class="frame-corner br"></div>
+                    </div>
+                    <div class="project-visual">
+                        <div class="project-icon">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                        <div class="project-hologram"></div>
+                    </div>
+                    <div class="project-info">
+                        <h3 class="project-name">Clinic Management</h3>
+                        <p class="project-desc">Online appointment booking and patient management system.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">HTML5</span>
+                            <span class="tech-tag">PHP</span>
+                            <span class="tech-tag">MySQL</span>
+                        </div>
+                        <a href="#" class="project-link">
+                            <span>View System</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Terminal Section -->
+    <section id="terminal" class="terminal-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">MODULE 05</span>
+                <h2 class="section-title">
+                    <span class="title-glitch" data-text="TERMINAL">TERMINAL</span>
+                    <span class="title-highlight">COMMAND INTERFACE</span>
+                </h2>
+            </div>
+
+            <div class="terminal-window">
+                <div class="terminal-toolbar">
+                    <div class="toolbar-section">
+                        <span class="toolbar-dot red"></span>
+                        <span class="toolbar-dot yellow"></span>
+                        <span class="toolbar-dot green"></span>
+                    </div>
+                    <div class="toolbar-title">rida@portfolio:~</div>
+                    <div class="toolbar-section">
+                        <i class="fas fa-terminal"></i>
+                    </div>
+                </div>
+                <div class="terminal-content" id="terminal-output">
+                    <div class="term-line welcome">
+                        <span class="term-text">Welcome to Rida's Portfolio Terminal v2.0</span>
+                    </div>
+                    <div class="term-line">
+                        <span class="term-text">Type 'help' to see available commands.</span>
+                    </div>
+                    <div class="term-line empty"></div>
+                </div>
+                <div class="terminal-input-line">
+                    <span class="input-prompt">visitor@rida:~$</span>
+                    <input type="text" id="terminal-input" class="terminal-input" placeholder="Enter command..." autocomplete="off" spellcheck="false">
+                    <span class="input-cursor">_</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">MODULE 06</span>
+                <h2 class="section-title">
+                    <span class="title-glitch" data-text="CONTACT">CONTACT</span>
+                    <span class="title-highlight">ESTABLISH CONNECTION</span>
+                </h2>
+            </div>
+
+            <div class="contact-interface">
+                <div class="contact-visual">
+                    <div class="connection-animation">
+                        <div class="signal-ring"></div>
+                        <div class="signal-ring"></div>
+                        <div class="signal-ring"></div>
+                        <div class="connection-core">
+                            <i class="fas fa-satellite-dish"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="contact-form">
+                    <div class="form-group">
+                        <input type="text" id="name" required>
+                        <label for="name">IDENTITY_NAME</label>
+                        <div class="input-border"></div>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="email" required>
+                        <label for="email">COMMUNICATION_CHANNEL</label>
+                        <div class="input-border"></div>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message" rows="4" required></textarea>
+                        <label for="message">TRANSMISSION_DATA</label>
+                        <div class="input-border"></div>
+                    </div>
+                    <button type="submit" class="transmit-btn">
+                        <span class="btn-text">INITIATE TRANSMISSION</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <span class="brand-text">RIDA<span class="brand-dot">.</span>AI</span>
+                <p>Building the future, one line of code at a time.</p>
+            </div>
+            <div class="footer-links">
+                <a href="#" class="footer-link"><i class="fab fa-github"></i></a>
+                <a href="#" class="footer-link"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="footer-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="footer-link"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="copyright">2026 RIDA.AI // ALL SYSTEMS OPERATIONAL</span>
+        </div>
+    </footer>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="project-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-wrapper">
+            <div class="modal-content">
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+                <div class="modal-header">
+                    <div class="modal-title-glitch" id="modal-title" data-text=""></div>
+                    <div class="modal-tags" id="modal-tags"></div>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-visual" id="modal-visual">
+                        <!-- Project Icon or Image will be injected here -->
+                    </div>
+                    <div class="modal-info">
+                        <h3>SYSTEM_OVERVIEW</h3>
+                        <p id="modal-desc"></p>
+                        <h3>TECHNICAL_CHALLENGES</h3>
+                        <ul id="modal-challenges"></ul>
+                        <h3>CORE_SOLUTIONS</h3>
+                        <p id="modal-solutions"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" class="modal-link" id="modal-repo-link"><i class="fab fa-github"></i> REPOSITORY</a>
+                    <a href="#" class="modal-link primary" id="modal-live-link"><i class="fas fa-external-link-alt"></i> LIVE_SYSTEM</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Controls -->
+    <div class="system-controls">
+        <button class="control-btn" id="toggle-safe-mode" title="Toggle Safe Mode">
+            <i class="fas fa-eye-slash"></i>
+        </button>
+        <button class="control-btn" id="toggle-language" title="Toggle Language (FR)">
+            <span class="lang-text">FR</span>
+        </button>
+    </div>
+
+    <!-- AI Assistant Widget -->
+    <div class="ai-assistant">
+        <button class="assistant-toggle">
+            <div class="toggle-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="toggle-pulse"></div>
+        </button>
+        <div class="assistant-panel">
+            <div class="assistant-header">
+                <div class="assistant-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="assistant-info">
+                    <span class="assistant-name">RIDA ASSISTANT</span>
+                    <span class="assistant-status">
+                        <span class="status-dot"></span>
+                        ONLINE
+                    </span>
+                </div>
+                <button class="assistant-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="assistant-messages" id="chat-messages">
+                <div class="message system">
+                    <p>Hello! I'm Rida's AI assistant. How can I help you navigate this portfolio?</p>
+                </div>
+            </div>
+            <div class="assistant-input">
+                <input type="text" id="chat-input" placeholder="Type your inquiry...">
+                <button class="send-message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
