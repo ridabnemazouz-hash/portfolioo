@@ -281,6 +281,19 @@ body.hovering .cursor-ring {
     height: 100%;
     z-index: 1;
     pointer-events: none;
+    opacity: 0.8;
+}
+
+/* Enhanced glow effect for Three.js canvas */
+#network-canvas::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, transparent 0%, rgba(2, 2, 4, 0.3) 100%);
+    pointer-events: none;
 }
 
 /* ========================================
@@ -350,6 +363,51 @@ body.hovering .cursor-ring {
 @keyframes dataFloat {
     0% { background-position: 0 0, 50px 50px; }
     100% { background-position: 100px 100px, 150px 150px; }
+}
+
+/* ========================================
+   HOLOGRAPHIC CIRCLES (Background Enhancement)
+   ======================================== */
+.holographic-circle {
+    position: fixed;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 240, 255, 0.1);
+    pointer-events: none;
+    z-index: 1;
+    animation: holoRotate 30s linear infinite;
+}
+
+.holographic-circle:nth-child(1) {
+    width: 400px;
+    height: 400px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateX(60deg);
+    opacity: 0.08;
+}
+
+.holographic-circle:nth-child(2) {
+    width: 600px;
+    height: 600px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateY(45deg);
+    opacity: 0.06;
+    border-color: rgba(184, 41, 221, 0.15);
+}
+
+.holographic-circle:nth-child(3) {
+    width: 800px;
+    height: 800px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateZ(30deg);
+    opacity: 0.05;
+}
+
+@keyframes holoRotate {
+    0% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg); }
+    100% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(360deg); }
 }
 
 /* ========================================
@@ -3755,4 +3813,167 @@ body.safe-mode * {
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
     border-top: 12px solid var(--holographic-bg);
+}
+
+/* ========================================
+   DRONE HOLOGRAPHIC LABELS
+   ======================================== */
+.drone-label {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.8));
+}
+
+.label-content {
+    background: linear-gradient(135deg, 
+        rgba(0, 240, 255, 0.15), 
+        rgba(184, 41, 221, 0.15));
+    border: 2px solid rgba(0, 240, 255, 0.6);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    position: relative;
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 0 20px rgba(0, 240, 255, 0.4),
+        inset 0 0 10px rgba(0, 240, 255, 0.1);
+    animation: labelPulse 2s ease-in-out infinite;
+}
+
+.label-text {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #00f0ff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 
+        0 0 10px rgba(0, 240, 255, 0.8),
+        0 0 20px rgba(0, 240, 255, 0.5);
+    white-space: nowrap;
+}
+
+.label-tail {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid rgba(0, 240, 255, 0.6);
+    filter: drop-shadow(0 2px 5px rgba(0, 240, 255, 0.5));
+}
+
+@keyframes labelPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 20px rgba(0, 240, 255, 0.4),
+            inset 0 0 10px rgba(0, 240, 255, 0.1);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 
+            0 0 30px rgba(0, 240, 255, 0.6),
+            inset 0 0 15px rgba(0, 240, 255, 0.2);
+        transform: scale(1.05);
+    }
+}
+
+/* Label entrance animation */
+.drone-label {
+    animation: labelEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes labelEnter {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) translateY(0);
+    }
+}
+
+/* ========================================
+   HOLOGRAPHIC MAP TOOLTIPS
+   ======================================== */
+.map-tooltip {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10001;
+    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.9));
+}
+
+.tooltip-content {
+    background: linear-gradient(135deg, 
+        rgba(0, 255, 136, 0.2), 
+        rgba(0, 240, 255, 0.15));
+    border: 2px solid rgba(0, 255, 136, 0.7);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    position: relative;
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 0 25px rgba(0, 255, 136, 0.5),
+        inset 0 0 15px rgba(0, 255, 136, 0.1);
+    animation: tooltipPulse 1.5s ease-in-out infinite;
+}
+
+.tooltip-text {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #00ff88;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-shadow: 
+        0 0 10px rgba(0, 255, 136, 0.9),
+        0 0 20px rgba(0, 255, 136, 0.6);
+    white-space: nowrap;
+}
+
+.tooltip-arrow {
+    position: absolute;
+    top: -6px;
+    left: 10px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 8px solid rgba(0, 255, 136, 0.7);
+    filter: drop-shadow(0 -2px 5px rgba(0, 255, 136, 0.6));
+}
+
+@keyframes tooltipPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 25px rgba(0, 255, 136, 0.5),
+            inset 0 0 15px rgba(0, 255, 136, 0.1);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 
+            0 0 35px rgba(0, 255, 136, 0.7),
+            inset 0 0 20px rgba(0, 255, 136, 0.2);
+        transform: scale(1.05);
+    }
+}
+
+/* Map entrance animation */
+.map-tooltip {
+    animation: tooltipEnter 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes tooltipEnter {
+    0% {
+        opacity: 0;
+        transform: scale(0.7) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }

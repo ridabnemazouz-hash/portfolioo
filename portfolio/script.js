@@ -443,7 +443,357 @@ document.addEventListener('DOMContentLoaded', () => {
     updateClock();
     
     // ========================================
-    // PARTICLE NETWORK WITH PARALLAX
+    // ADVANCED AI NEURAL NETWORK (Three.js)
+    // ========================================
+    const networkCanvas = document.getElementById('network-canvas');
+    if (networkCanvas) {
+        let scene, camera, renderer, particles, particleSystem;
+        let holographicRings = [];
+        let dataStreams = [];
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+        let isVisible = true;
+        let animationId;
+        
+        // Configuration
+        const particleCount = window.innerWidth < 768 ? 800 : 2000;
+        const connectionDistance = window.innerWidth < 768 ? 1.5 : 2.5;
+        const networkDepth = 10;
+        
+        function initNeuralNetwork() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x020204, 0.03);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: networkCanvas,
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            
+            // Create particles (neural nodes)
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            const velocities = [];
+            
+            for (let i = 0; i < particleCount; i++) {
+                // Spherical distribution
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const radius = 3 + Math.random() * 2;
+                
+                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = radius * Math.cos(phi);
+                
+                // Colors (cyan and purple)
+                const isCyan = Math.random() > 0.4;
+                colors[i * 3] = isCyan ? 0 : 0.7;     // R
+                colors[i * 3 + 1] = isCyan ? 0.94 : 0.16; // G
+                colors[i * 3 + 2] = isCyan ? 1 : 0.87;    // B
+                
+                sizes[i] = Math.random() * 0.05 + 0.02;
+                
+                // Velocities for subtle movement
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.002,
+                    y: (Math.random() - 0.5) * 0.002,
+                    z: (Math.random() - 0.5) * 0.002
+                });
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            // Shader material for glowing particles
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    pixelRatio: { value: renderer.getPixelRatio() }
+                },
+                vertexShader: `
+                    attribute float size;
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    uniform float time;
+                    
+                    void main() {
+                        vColor = color;
+                        vec3 pos = position;
+                        
+                        // Subtle pulse movement
+                        pos.x += sin(time * 0.5 + position.y) * 0.05;
+                        pos.y += cos(time * 0.3 + position.x) * 0.05;
+                        pos.z += sin(time * 0.4 + position.z) * 0.05;
+                        
+                        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                        gl_PointSize = size * 300.0 / -mvPosition.z;
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    
+                    void main() {
+                        float r = distance(gl_PointCoord, vec2(0.5));
+                        if (r > 0.5) discard;
+                        
+                        float glow = 1.0 - (r * 2.0);
+                        glow = pow(glow, 1.5);
+                        
+                        gl_FragColor = vec4(vColor, glow);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            
+            particleSystem = new THREE.Points(geometry, material);
+            particleSystem.userData.velocities = velocities;
+            scene.add(particleSystem);
+            
+            // Create connections (neural pathways) - Lines between nearby particles
+            const linesMaterial = new THREE.LineBasicMaterial({
+                color: 0x00f0ff,
+                transparent: true,
+                opacity: 0.15,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const linesGeometry = new THREE.BufferGeometry();
+            const linePositions = new Float32Array(particleCount * 6); // Max connections
+            linesGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+            
+            const lineSystem = new THREE.LineSegments(linesGeometry, linesMaterial);
+            lineSystem.frustumCulled = false; // Prevent flickering
+            scene.add(lineSystem);
+            
+            // Store reference for updates
+            particleSystem.lineSystem = lineSystem;
+            
+            // Create holographic rings
+            createHolographicRings();
+            
+            // Create data streams
+            createDataStreams();
+            
+            // Mouse tracking
+            document.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            });
+            
+            // Handle resize
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Start animation
+            animateNeuralNetwork();
+        }
+        
+        function createHolographicRings() {
+            const ringConfigs = [
+                { radius: 4, rotationX: Math.PI / 3, color: 0x00f0ff, opacity: 0.15, speed: 0.002 },
+                { radius: 5, rotationX: Math.PI / 2.5, color: 0xb829dd, opacity: 0.12, speed: -0.0015 },
+                { radius: 6, rotationX: Math.PI / 2.2, color: 0x00f0ff, opacity: 0.1, speed: 0.001 }
+            ];
+            
+            ringConfigs.forEach((config, index) => {
+                const geometry = new THREE.TorusGeometry(config.radius, 0.02, 2, 100);
+                const material = new THREE.MeshBasicMaterial({
+                    color: config.color,
+                    transparent: true,
+                    opacity: config.opacity,
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const ring = new THREE.Mesh(geometry, material);
+                ring.rotation.x = config.rotationX;
+                ring.userData.speed = config.speed;
+                ring.userData.baseOpacity = config.opacity;
+                
+                scene.add(ring);
+                holographicRings.push(ring);
+            });
+        }
+        
+        function createDataStreams() {
+            for (let i = 0; i < 15; i++) {
+                const geometry = new THREE.BufferGeometry();
+                const points = [];
+                
+                // Create curved path
+                const segments = 20;
+                for (let j = 0; j < segments; j++) {
+                    const t = j / segments;
+                    const x = (Math.random() - 0.5) * 10;
+                    const y = (Math.random() - 0.5) * 10;
+                    const z = (Math.random() - 0.5) * 5;
+                    points.push(new THREE.Vector3(x, y, z));
+                }
+                
+                const curve = new THREE.CatmullRomCurve3(points);
+                const curvePoints = curve.getPoints(segments);
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(curvePoints.flatMap(p => [p.x, p.y, p.z]), 3));
+                
+                const material = new THREE.LineBasicMaterial({
+                    color: Math.random() > 0.5 ? 0x00f0ff : 0xb829dd,
+                    transparent: true,
+                    opacity: 0.08,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const stream = new THREE.Line(geometry, material);
+                stream.userData = {
+                    offset: Math.random() * 100,
+                    speed: 0.005 + Math.random() * 0.01
+                };
+                
+                scene.add(stream);
+                dataStreams.push(stream);
+            }
+        }
+        
+        function updateConnections() {
+            if (!particleSystem || !particleSystem.lineSystem) return;
+            
+            const positions = particleSystem.geometry.attributes.position.array;
+            const linePositions = particleSystem.lineSystem.geometry.attributes.position.array;
+            let lineIndex = 0;
+            const maxLines = Math.floor(particleCount * 2); // Limit connections
+            
+            for (let i = 0; i < particleCount && lineIndex < maxLines * 6; i++) {
+                let connections = 0;
+                for (let j = i + 1; j < particleCount && connections < 3; j++) {
+                    const dx = positions[i * 3] - positions[j * 3];
+                    const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
+                    const dz = positions[i * 3 + 2] - positions[j * 3 + 2];
+                    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    
+                    if (distance < connectionDistance) {
+                        linePositions[lineIndex * 6] = positions[i * 3];
+                        linePositions[lineIndex * 6 + 1] = positions[i * 3 + 1];
+                        linePositions[lineIndex * 6 + 2] = positions[i * 3 + 2];
+                        linePositions[lineIndex * 6 + 3] = positions[j * 3];
+                        linePositions[lineIndex * 6 + 4] = positions[j * 3 + 1];
+                        linePositions[lineIndex * 6 + 5] = positions[j * 3 + 2];
+                        lineIndex++;
+                        connections++;
+                    }
+                }
+            }
+            
+            // Fill remaining with dummy data
+            for (let i = lineIndex; i < maxLines; i++) {
+                linePositions[i * 6] = 9999;
+                linePositions[i * 6 + 1] = 9999;
+                linePositions[i * 6 + 2] = 9999;
+                linePositions[i * 6 + 3] = 9999;
+                linePositions[i * 6 + 4] = 9999;
+                linePositions[i * 6 + 5] = 9999;
+            }
+            
+            particleSystem.lineSystem.geometry.attributes.position.needsUpdate = true;
+        }
+        
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        let time = 0;
+        function animateNeuralNetwork() {
+            if (!isVisible) return;
+            
+            time += 0.01;
+            
+            // Smooth mouse following
+            targetX += (mouseX - targetX) * 0.05;
+            targetY += (mouseY - targetY) * 0.05;
+            
+            // Rotate entire network based on mouse
+            if (particleSystem) {
+                particleSystem.rotation.y += 0.002;
+                particleSystem.rotation.x += (targetY * 0.3 - particleSystem.rotation.x) * 0.05;
+                particleSystem.rotation.z += (targetX * 0.3 - particleSystem.rotation.z) * 0.05;
+                
+                // Update particle shader
+                particleSystem.material.uniforms.time.value = time;
+                
+                // Subtle particle movement
+                const positions = particleSystem.geometry.attributes.position.array;
+                const velocities = particleSystem.userData.velocities;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    positions[i * 3] += velocities[i].x;
+                    positions[i * 3 + 1] += velocities[i].y;
+                    positions[i * 3 + 2] += velocities[i].z;
+                    
+                    // Boundary check
+                    const x = positions[i * 3];
+                    const y = positions[i * 3 + 1];
+                    const z = positions[i * 3 + 2];
+                    const dist = Math.sqrt(x * x + y * y + z * z);
+                    
+                    if (dist > 5) {
+                        velocities[i].x *= -0.5;
+                        velocities[i].y *= -0.5;
+                        velocities[i].z *= -0.5;
+                    }
+                }
+                
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+                
+                // Update connections
+                updateConnections();
+            }
+            
+            // Animate holographic rings
+            holographicRings.forEach(ring => {
+                ring.rotation.z += ring.userData.speed;
+                ring.material.opacity = ring.userData.baseOpacity + Math.sin(time * 2) * 0.05;
+            });
+            
+            // Animate data streams
+            dataStreams.forEach(stream => {
+                stream.rotation.y += 0.001;
+                stream.material.opacity = 0.05 + Math.sin(time * 3 + stream.userData.offset) * 0.03;
+            });
+            
+            renderer.render(scene, camera);
+            animationId = requestAnimationFrame(animateNeuralNetwork);
+        }
+        
+        // Initialize after a short delay
+        setTimeout(initNeuralNetwork, 500);
+        
+        // Handle visibility change
+        document.addEventListener('visibilitychange', () => {
+            isVisible = !document.hidden;
+            if (isVisible) {
+                animateNeuralNetwork();
+            } else {
+                cancelAnimationFrame(animationId);
+            }
+        });
+    }
+    
+    // ========================================
+    // PARTICLE NETWORK WITH PARALLAX (Legacy fallback)
     // ========================================
     const canvas = document.getElementById('network-canvas');
     if (canvas) {
@@ -592,6 +942,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ENHANCED 3D ROBOT WITH INTERACTIONS
     // ========================================
     let robotReactToHover = null;
+    let droneInstance = null;
+    let droneParticles = [];
+    let holographicLabels = [];
+    let isDroneActive = false;
+    let droneAnimationId = null;
+    let holographicMap = null;
+    let isMapActive = false;
+    let mapNodes = [];
+    let mapConnections = [];
     
     function initRobot() {
         const container = document.getElementById('robot-canvas-container');
@@ -1052,7 +1411,1024 @@ document.addEventListener('DOMContentLoaded', () => {
         
         scene.add(robot);
         
-        // Enhanced Lighting
+        // ========================================
+        // DRONE LAUNCH SYSTEM - PREMIUM CYBERPUNK DESIGN
+        // ========================================
+        function createDrone() {
+            const droneGroup = new THREE.Group();
+            
+            // === PREMIUM SLEEK BODY DESIGN ===
+            
+            // Main body - smooth teardrop shape
+            const bodyGeo = new THREE.SphereGeometry(0.18, 32, 32);
+            const bodyMat = new THREE.MeshPhysicalMaterial({
+                color: 0x1a1a2e,  // Dark navy metallic
+                metalness: 0.95,
+                roughness: 0.05,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.03,
+                reflectivity: 0.9
+            });
+            const droneBody = new THREE.Mesh(bodyGeo, bodyMat);
+            // Elongate into teardrop
+            droneBody.scale.set(1, 0.7, 1.3);
+            droneGroup.add(droneBody);
+            
+            // === GLOWING AI CORE ===
+            const coreGeo = new THREE.OctahedronGeometry(0.06, 0);
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0x00f0ff,
+                transparent: true,
+                opacity: 0.95
+            });
+            const droneCore = new THREE.Mesh(coreGeo, coreMat);
+            droneGroup.add(droneCore);
+            
+            // Core containment ring
+            const coreRingGeo = new THREE.TorusGeometry(0.1, 0.015, 16, 48);
+            const coreRingMat = new THREE.MeshBasicMaterial({
+                color: 0x00f0ff,
+                transparent: true,
+                opacity: 0.6
+            });
+            const coreRing = new THREE.Mesh(coreRingGeo, coreRingMat);
+            coreRing.rotation.x = Math.PI / 2;
+            droneGroup.add(coreRing);
+            
+            // === ANTI-GRAVITY PROPULSION RING ===
+            const antiGravRingGeo = new THREE.TorusGeometry(0.25, 0.02, 24, 64);
+            const antiGravRingMat = new THREE.MeshStandardMaterial({
+                color: 0x2a1a4a,  // Dark purple
+                metalness: 0.8,
+                roughness: 0.2,
+                emissive: 0xb829dd,
+                emissiveIntensity: 0.3
+            });
+            const antiGravRing = new THREE.Mesh(antiGravRingGeo, antiGravRingMat);
+            antiGravRing.rotation.x = Math.PI / 2;
+            antiGravRing.position.y = -0.05;
+            droneGroup.add(antiGravRing);
+            
+            // Inner glow of anti-grav ring
+            const antiGravGlowGeo = new THREE.TorusGeometry(0.22, 0.008, 16, 64);
+            const antiGravGlowMat = new THREE.MeshBasicMaterial({
+                color: 0xb829dd,
+                transparent: true,
+                opacity: 0.7
+            });
+            const antiGravGlow = new THREE.Mesh(antiGravGlowGeo, antiGravGlowMat);
+            antiGravGlow.rotation.x = Math.PI / 2;
+            antiGravGlow.position.y = -0.04;
+            droneGroup.add(antiGravGlow);
+            
+            // === HOLOGRAPHIC SENSOR ARRAY ===
+            const sensorPositions = [
+                { x: 0.15, y: 0, z: 0.1 },
+                { x: -0.15, y: 0, z: 0.1 },
+                { x: 0, y: 0.12, z: 0.1 },
+                { x: 0, y: -0.08, z: 0.1 }
+            ];
+            
+            sensorPositions.forEach(pos => {
+                // Sensor housing
+                const sensorHousingGeo = new THREE.SphereGeometry(0.025, 12, 12);
+                const sensorHousingMat = new THREE.MeshStandardMaterial({
+                    color: 0x0a0a15,
+                    metalness: 0.9,
+                    roughness: 0.1
+                });
+                const sensorHousing = new THREE.Mesh(sensorHousingGeo, sensorHousingMat);
+                sensorHousing.position.set(pos.x, pos.y, pos.z);
+                droneGroup.add(sensorHousing);
+                
+                // Glowing sensor element
+                const sensorGlowGeo = new THREE.SphereGeometry(0.018, 8, 8);
+                const sensorGlowMat = new THREE.MeshBasicMaterial({
+                    color: 0x00ff88,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const sensorGlow = new THREE.Mesh(sensorGlowGeo, sensorGlowMat);
+                sensorGlow.position.set(pos.x * 0.9, pos.y * 0.9, pos.z * 1.1);
+                droneGroup.add(sensorGlow);
+            });
+            
+            // === NEON ACCENT STRIPS ===
+            const accentStripGeo = new THREE.TorusGeometry(0.12, 0.008, 16, 32);
+            const accentStripMat = new THREE.MeshBasicMaterial({
+                color: 0xb829dd,
+                transparent: true,
+                opacity: 0.5
+            });
+            
+            const accentStrip1 = new THREE.Mesh(accentStripGeo, accentStripMat);
+            accentStrip1.rotation.y = Math.PI / 4;
+            accentStrip1.position.set(0, 0.08, 0);
+            droneGroup.add(accentStrip1);
+            
+            const accentStrip2 = new THREE.Mesh(accentStripGeo, accentStripMat);
+            accentStrip2.rotation.y = -Math.PI / 4;
+            accentStrip2.position.set(0, -0.08, 0);
+            droneGroup.add(accentStrip2);
+            
+            // === SCANNING LIGHT BEAM ===
+            const scanBeamGeo = new THREE.CylinderGeometry(0.01, 0.08, 0.4, 16);
+            const scanBeamMat = new THREE.MeshBasicMaterial({
+                color: 0x00f0ff,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.AdditiveBlending
+            });
+            const scanBeam = new THREE.Mesh(scanBeamGeo, scanBeamMat);
+            scanBeam.position.y = -0.25;
+            scanBeam.rotation.x = 0.2;
+            droneGroup.add(scanBeam);
+            
+            // Store references for animation
+            droneGroup.userData = {
+                core: droneCore,
+                coreRing: coreRing,
+                antiGravRing: antiGravRing,
+                antiGravGlow: antiGravGlow,
+                sensors: droneGroup.children.filter(c => 
+                    c.geometry && c.geometry.type === 'SphereGeometry' && 
+                    c.material && c.material.emissive !== undefined
+                ).slice(-4),
+                scanBeam: scanBeam,
+                accents: [accentStrip1, accentStrip2]
+            };
+            
+            return droneGroup;
+        }
+        
+        // Create particle trail for drone - enhanced neon effect
+        function createDroneParticle(position) {
+            const geometry = new THREE.SphereGeometry(0.015, 8, 8);
+            const material = new THREE.MeshBasicMaterial({
+                color: Math.random() > 0.5 ? 0x00f0ff : 0xb829dd,
+                transparent: true,
+                opacity: 0.9
+            });
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.copy(position);
+            particle.userData = {
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.015,
+                    (Math.random() - 0.5) * 0.015,
+                    (Math.random() - 0.5) * 0.015
+                ),
+                life: 1.0,
+                rotationSpeed: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.1,
+                    (Math.random() - 0.5) * 0.1,
+                    (Math.random() - 0.5) * 0.1
+                )
+            };
+            scene.add(particle);
+            droneParticles.push(particle);
+        }
+        
+        // Create holographic circles when drone stops at sections
+        function createHolographicCircles(position) {
+            const circleGroup = new THREE.Group();
+            
+            for (let i = 0; i < 3; i++) {
+                const ringGeo = new THREE.TorusGeometry(0.3 + i * 0.15, 0.01, 16, 64);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: i % 2 === 0 ? 0x00f0ff : 0xb829dd,
+                    transparent: true,
+                    opacity: 0.4 - i * 0.1,
+                    side: THREE.DoubleSide
+                });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                ring.userData = {
+                    baseOpacity: 0.4 - i * 0.1,
+                    phase: i * 0.5
+                };
+                circleGroup.add(ring);
+            }
+            
+            circleGroup.position.copy(position);
+            circleGroup.position.y -= 0.5;
+            scene.add(circleGroup);
+            
+            // Animate and auto-remove
+            let expandTime = 0;
+            const expandDuration = 2000;
+            
+            const expandInterval = setInterval(() => {
+                expandTime += 50;
+                const progress = expandTime / expandDuration;
+                
+                circleGroup.scale.setScalar(1 + progress);
+                circleGroup.children.forEach(ring => {
+                    ring.material.opacity = ring.userData.baseOpacity * (1 - progress);
+                    ring.rotation.z += 0.02;
+                });
+                
+                if (expandTime >= expandDuration) {
+                    clearInterval(expandInterval);
+                    scene.remove(circleGroup);
+                }
+            }, 50);
+        }
+        
+        // Launch drone from robot's chest
+        function launchDrone() {
+            if (isDroneActive || !robotInstance) return;
+            
+            isDroneActive = true;
+            
+            // Create drone
+            droneInstance = createDrone();
+            droneInstance.position.set(0, 1, 0.6); // Start at robot's chest
+            scene.add(droneInstance);
+            
+            // Power up animation
+            let powerUpTime = 0;
+            const powerUpDuration = 2000; // 2 seconds
+            
+            const powerInterval = setInterval(() => {
+                powerUpTime += 50;
+                const progress = powerUpTime / powerUpDuration;
+                
+                // Pulse core with rotation
+                const pulse = 1 + Math.sin(progress * Math.PI * 3) * progress;
+                droneInstance.userData.core.scale.setScalar(pulse);
+                droneInstance.userData.core.rotation.y += 0.2;
+                droneInstance.userData.core.material.opacity = 0.5 + progress * 0.4;
+                
+                // Rotate core ring
+                droneInstance.userData.coreRing.rotation.z += 0.1;
+                droneInstance.userData.coreRing.material.opacity = 0.4 + progress * 0.2;
+                
+                // Spin anti-gravity ring
+                droneInstance.userData.antiGravRing.rotation.z += 0.3 + progress * 1.5;
+                droneInstance.userData.antiGravGlow.material.opacity = 0.5 + progress * 0.2;
+                
+                // Activate sensors sequentially
+                droneInstance.userData.sensors.forEach((sensor, i) => {
+                    sensor.material.opacity = 0.3 + (Math.sin(powerUpTime * 0.01 + i * 0.5) + 1) * 0.2;
+                });
+                
+                if (powerUpTime >= powerUpDuration) {
+                    clearInterval(powerInterval);
+                    // Launch!
+                    animateDroneFlight();
+                }
+            }, 50);
+            
+            // Play sound effect (optional - using Web Audio API)
+            playDroneSound();
+        }
+        
+        // Drone flight path - CINEMATIC WIDE PATH covering entire page
+        function animateDroneFlight() {
+            const sections = [
+                { name: 'HOME', position: new THREE.Vector3(0, 3.5, 4.5), duration: 5000 },
+                { name: 'ABOUT', position: new THREE.Vector3(-7, 4, 5), duration: 5000 },
+                { name: 'SKILLS', position: new THREE.Vector3(7, 3.5, 5), duration: 5000 },
+                { name: 'PROJECTS', position: new THREE.Vector3(-6, 3, 5), duration: 5000 },
+                { name: 'TERMINAL', position: new THREE.Vector3(6, 3, 5), duration: 5000 },
+                { name: 'CONTACT', position: new THREE.Vector3(0, 4.5, 4), duration: 5000 }
+            ];
+            
+            let currentSection = 0;
+            let startTime = Date.now();
+            let startPosition = droneInstance.position.clone();
+            
+            function flyToNext() {
+                if (currentSection >= sections.length) {
+                    // After completing the tour, enable mouse follow mode
+                    currentSection = 0;
+                    startPosition = droneInstance.position.clone();
+                    enableMouseFollowMode();
+                    return;
+                }
+                
+                const target = sections[currentSection];
+                const nextIndex = (currentSection + 1) % sections.length;
+                const nextTarget = sections[nextIndex];
+                
+                startTime = Date.now();
+                
+                // Calculate control point for curved path (bezier-like)
+                const midPoint = new THREE.Vector3()
+                    .addVectors(startPosition, target.position)
+                    .multiplyScalar(0.5);
+                midPoint.y += 1.5; // Higher arc for more dramatic motion
+                midPoint.z += 1;   // Move forward in Z for wider arc
+                
+                // Create holographic label
+                createHolographicLabel(target.name, target.position);
+                
+                // Smooth flight with GSAP-like interpolation
+                const animateFlight = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / target.duration, 1);
+                    
+                    // Ease in-out cubic with spiral motion
+                    const eased = progress < 0.5 
+                        ? 4 * progress * progress * progress 
+                        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                    
+                    // Quadratic bezier curve for smooth arc
+                    const t = eased;
+                    const oneMinusT = 1 - t;
+                    
+                    // Position on curve: (1-t)² * P0 + 2(1-t)t * P1 + t² * P2
+                    droneInstance.position.x = 
+                        oneMinusT * oneMinusT * startPosition.x +
+                        2 * oneMinusT * t * midPoint.x +
+                        t * t * target.position.x;
+                    
+                    droneInstance.position.y = 
+                        oneMinusT * oneMinusT * startPosition.y +
+                        2 * oneMinusT * t * midPoint.y +
+                        t * t * target.position.y;
+                    
+                    droneInstance.position.z = 
+                        oneMinusT * oneMinusT * startPosition.z +
+                        2 * oneMinusT * t * midPoint.z +
+                        t * t * target.position.z;
+                    
+                    // Calculate look-at point (slightly ahead on path)
+                    const lookAheadT = Math.min(progress + 0.1, 1);
+                    const lookAheadX = 
+                        (1-lookAheadT) * (1-lookAheadT) * startPosition.x +
+                        2 * (1-lookAheadT) * lookAheadT * midPoint.x +
+                        lookAheadT * lookAheadT * target.position.x;
+                    const lookAheadY = 
+                        (1-lookAheadT) * (1-lookAheadT) * startPosition.y +
+                        2 * (1-lookAheadT) * lookAheadT * midPoint.y +
+                        lookAheadT * lookAheadT * target.position.y;
+                    const lookAheadZ = 
+                        (1-lookAheadT) * (1-lookAheadT) * startPosition.z +
+                        2 * (1-lookAheadT) * lookAheadT * midPoint.z +
+                        lookAheadT * lookAheadT * target.position.z;
+                    
+                    // Smooth orientation with slight tilt
+                    const lookAtPos = new THREE.Vector3(lookAheadX, lookAheadY, lookAheadZ);
+                    droneInstance.lookAt(lookAtPos);
+                    
+                    // GRADUALLY ROTATE TO FACE CAMERA during flight for better visibility
+                    const cameraDirection = new THREE.Vector3();
+                    camera.getWorldDirection(cameraDirection);
+                    const idealLookAt = droneInstance.position.clone().add(cameraDirection);
+                    
+                    // Blend between path direction and camera-facing (70% camera, 30% path)
+                    const blendedLookAt = lookAtPos.clone().lerp(idealLookAt, 0.7);
+                    droneInstance.lookAt(blendedLookAt);
+                    
+                    // Add slight spiral/roll motion during flight
+                    droneInstance.rotation.z = Math.sin(progress * Math.PI * 4) * 0.15;
+                    droneInstance.rotation.x = Math.sin(progress * Math.PI * 2) * 0.08;
+                    
+                    // Create particle trail
+                    if (progress < 1) {
+                        createDroneParticle(droneInstance.position.clone());
+                        
+                        // Additional particles during curves
+                        if (Math.random() > 0.6) {
+                            createDroneParticle(droneInstance.position.clone().add(
+                                new THREE.Vector3(
+                                    (Math.random() - 0.5) * 0.3,
+                                    (Math.random() - 0.5) * 0.3,
+                                    (Math.random() - 0.5) * 0.3
+                                )
+                            ));
+                        }
+                    }
+                    
+                    // Animate anti-gravity ring
+                    droneInstance.userData.antiGravRing.rotation.z += 0.04;
+                    
+                    // CONSTANT VISIBILITY ENHANCEMENTS
+                    // Maintain high visibility throughout flight
+                    const baseScale = 1.35;  // Increased for better visibility
+                    const pulse = baseScale + Math.sin(Date.now() * 0.01) * 0.15;
+                    droneInstance.scale.setScalar(pulse);
+                    
+                    // Core always bright
+                    droneInstance.userData.core.material.opacity = 0.95 + Math.sin(Date.now() * 0.015) * 0.05;
+                    
+                    // Anti-gravity ring glow pulsing
+                    const antiGravPulse = 0.6 + Math.sin(Date.now() * 0.003) * 0.15;
+                    droneInstance.userData.antiGravGlow.material.opacity = antiGravPulse;
+                    
+                    // Sensors maintain visibility
+                    droneInstance.userData.sensors.forEach((sensor, i) => {
+                        sensor.material.opacity = 0.7 + Math.sin(Date.now() * 0.004 + i * 0.5) * 0.15;
+                    });
+                    
+                    // Scanning beam always visible
+                    droneInstance.userData.scanBeam.material.opacity = 0.25 + Math.sin(Date.now() * 0.003) * 0.1;
+                    
+                    // Accent strips pulsing
+                    droneInstance.userData.accents.forEach((accent, i) => {
+                        accent.material.opacity = 0.4 + Math.sin(Date.now() * 0.005 + i * Math.PI) * 0.15;
+                    });
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateFlight);
+                    } else {
+                        // Arrived at section - hover briefly with scanning animation
+                        startPosition = target.position.clone();
+                        currentSection++;
+                        
+                        // Perform scanning animation at this section
+                        performScanningAnimation(target.position);
+                        
+                        // Create holographic circles on arrival
+                        createHolographicCircles(target.position);
+                        
+                        // Hover animation before next segment
+                        setTimeout(flyToNext, 800);
+                    }
+                };
+                
+                animateFlight();
+            }
+            
+            // Start flight sequence
+            flyToNext();
+        }
+        
+        // Scanning animation when drone hovers over sections
+        function performScanningAnimation(position) {
+            // Intensify scanning beam
+            const scanBeam = droneInstance.userData.scanBeam;
+            let scanIntensity = 0;
+            const scanDuration = 600;
+            const scanInterval = setInterval(() => {
+                scanIntensity += 50;
+                const progress = scanIntensity / scanDuration;
+                
+                // Pulse scanning beam
+                scanBeam.material.opacity = 0.3 + Math.sin(progress * Math.PI * 4) * 0.2;
+                scanBeam.rotation.y += 0.15;
+                
+                // Pulse core brightness
+                droneInstance.userData.core.material.opacity = 0.7 + Math.sin(progress * Math.PI * 3) * 0.25;
+                
+                if (scanIntensity >= scanDuration) {
+                    clearInterval(scanInterval);
+                    scanBeam.material.opacity = 0.25;
+                }
+            }, 50);
+        }
+        
+        // Mouse follow mode - activated after completing the tour
+        let mouseFollowEnabled = false;
+        let mousePosition3D = new THREE.Vector3(0, 1, 3);
+        
+        function enableMouseFollowMode() {
+            mouseFollowEnabled = true;
+            
+            // Track mouse position in 3D space
+            document.addEventListener('mousemove', (event) => {
+                if (!mouseFollowEnabled) return;
+                
+                // Convert mouse to normalized device coordinates
+                const mouseNormX = (event.clientX / window.innerWidth) * 2 - 1;
+                const mouseNormY = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                // Map to 3D world coordinates (wide range)
+                mousePosition3D.x = mouseNormX * 8;  // Wide horizontal range
+                mousePosition3D.y = mouseNormY * 4;  // Vertical range
+                mousePosition3D.z = 4 + Math.sin(Date.now() * 0.001) * 1; // Gentle Z oscillation
+            });
+            
+            // Animate drone following mouse
+            const followMouse = () => {
+                if (!droneInstance || !mouseFollowEnabled) return;
+                
+                // Smooth lerp toward mouse position
+                const currentPos = droneInstance.position;
+                const targetPos = mousePosition3D.clone();
+                
+                // Add floating motion
+                targetPos.y += Math.sin(Date.now() * 0.002) * 0.5;
+                
+                // Lerp for smooth following (0.03 = slower, more elegant)
+                currentPos.lerp(targetPos, 0.03);
+                
+                // FACE CAMERA directly while following mouse
+                const cameraDir = new THREE.Vector3();
+                camera.getWorldDirection(cameraDir);
+                const lookAtTarget = currentPos.clone().add(cameraDir.multiplyScalar(2));
+                droneInstance.lookAt(lookAtTarget);
+                
+                // Continuous animations with enhanced visibility\n                droneInstance.userData.antiGravRing.rotation.z += 0.03;\n                \n                // MAINTAIN VISIBILITY in mouse-follow mode\n                const followScale = 1.15 + Math.sin(Date.now() * 0.01) * 0.15;\n                droneInstance.scale.setScalar(followScale);\n                \n                // Core always bright\n                droneInstance.userData.core.material.opacity = 0.85 + Math.sin(Date.now() * 0.015) * 0.1;\n                \n                // Anti-gravity glow pulsing\n                const followAntiGrav = 0.6 + Math.sin(Date.now() * 0.003) * 0.15;\n                droneInstance.userData.antiGravGlow.material.opacity = followAntiGrav;\n                \n                // Sensors visible\n                droneInstance.userData.sensors.forEach((sensor, i) => {\n                    sensor.material.opacity = 0.7 + Math.sin(Date.now() * 0.004 + i * 0.5) * 0.15;\n                });\n                \n                // Scan beam active\n                droneInstance.userData.scanBeam.material.opacity = 0.25 + Math.sin(Date.now() * 0.003) * 0.1;\n                droneInstance.userData.scanBeam.rotation.y += 0.05;
+                
+                requestAnimationFrame(followMouse);
+            };
+            
+            followMouse();
+        }
+        
+        // Create holographic label for sections
+        function createHolographicLabel(text, position) {
+            // Remove old labels
+            holographicLabels.forEach(label => {
+                scene.remove(label.mesh);
+            });
+            holographicLabels = [];
+            
+            // Create label group (will be positioned in screen space)
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'drone-label';
+            labelDiv.innerHTML = `
+                <div class="label-content">
+                    <span class="label-text">${text}</span>
+                    <div class="label-tail"></div>
+                </div>
+            `;
+            document.body.appendChild(labelDiv);
+            
+            // Store reference
+            holographicLabels.push({
+                mesh: labelDiv,
+                position: position.clone(),
+                createdAt: Date.now()
+            });
+            
+            // Auto-remove after delay
+            setTimeout(() => {
+                labelDiv.style.transition = 'opacity 0.5s ease';
+                labelDiv.style.opacity = '0';
+                setTimeout(() => labelDiv.remove(), 500);
+            }, 2500);
+        }
+        
+        // Update holographic labels positions
+        function updateHolographicLabels() {
+            if (!camera || !droneInstance) return;
+            
+            holographicLabels.forEach(label => {
+                const screenPos = label.position.clone();
+                screenPos.project(camera);
+                
+                const x = (screenPos.x * .5 + .5) * window.innerWidth;
+                const y = (-(screenPos.y * .5) + .5) * window.innerHeight;
+                
+                label.mesh.style.left = `${x}px`;
+                label.mesh.style.top = `${y - 50}px`;
+                label.mesh.style.transform = 'translate(-50%, -50%)';
+            });
+        }
+        
+        // Update drone particles
+        function updateDroneParticles() {
+            for (let i = droneParticles.length - 1; i >= 0; i--) {
+                const particle = droneParticles[i];
+                particle.position.add(particle.userData.velocity);
+                particle.userData.life -= 0.02;
+                particle.material.opacity = particle.userData.life * 0.8;
+                particle.scale.setScalar(particle.userData.life);
+                
+                if (particle.userData.life <= 0) {
+                    scene.remove(particle);
+                    droneParticles.splice(i, 1);
+                }
+            }
+        }
+        
+        // Simple drone sound using Web Audio API
+        function playDroneSound() {
+            if (!window.AudioContext && !window.webkitAudioContext) return;
+            
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // Futuristic rising sound
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 2);
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 2);
+        }
+        
+        // Create holographic website map
+        function createHolographicMap() {
+            const mapGroup = new THREE.Group();
+            
+            // Map base platform (circular holographic disk)
+            const baseGeo = new THREE.CylinderGeometry(3, 3, 0.05, 64);
+            const baseMat = new THREE.MeshBasicMaterial({
+                color: 0x00f0ff,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide
+            });
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            base.rotation.x = Math.PI / 2;
+            mapGroup.add(base);
+            
+            // Concentric rings
+            for (let i = 0; i < 3; i++) {
+                const ringGeo = new THREE.TorusGeometry(1.5 + i * 0.8, 0.02, 16, 64);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: i % 2 === 0 ? 0x00f0ff : 0xb829dd,
+                    transparent: true,
+                    opacity: 0.3 - i * 0.05
+                });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = 0.1 + i * 0.05;
+                ring.userData = {
+                    rotationSpeed: (i + 1) * 0.005 * (i % 2 === 0 ? 1 : -1),
+                    baseOpacity: 0.3 - i * 0.05
+                };
+                mapGroup.add(ring);
+            }
+            
+            // Section nodes (6 sections in circular arrangement)
+            const sectionNames = ['HOME', 'ABOUT', 'SKILLS', 'PROJECTS', 'TERMINAL', 'CONTACT'];
+            const nodePositions = [];
+            
+            sectionNames.forEach((name, index) => {
+                const angle = (index / sectionNames.length) * Math.PI * 2;
+                const radius = 2.2;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                
+                nodePositions.push({ name, position: new THREE.Vector3(x, 0.2, z), index });
+                
+                // Node pedestal
+                const pedestalGeo = new THREE.CylinderGeometry(0.15, 0.2, 0.3, 16);
+                const pedestalMat = new THREE.MeshStandardMaterial({
+                    color: 0x2a1a4a,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
+                pedestal.position.set(x, 0.15, z);
+                mapGroup.add(pedestal);
+                
+                // Glowing node sphere
+                const nodeGeo = new THREE.SphereGeometry(0.12, 24, 24);
+                const nodeMat = new THREE.MeshBasicMaterial({
+                    color: 0x00f0ff,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const node = new THREE.Mesh(nodeGeo, nodeMat);
+                node.position.set(x, 0.35, z);
+                node.userData = { 
+                    name, 
+                    originalY: 0.35,
+                    pulsePhase: index * 0.5,
+                    isHovered: false
+                };
+                mapGroup.add(node);
+                mapNodes.push(node);
+                
+                // Vertical data beam
+                const beamGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8);
+                const beamMat = new THREE.MeshBasicMaterial({
+                    color: 0x00f0ff,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const beam = new THREE.Mesh(beamGeo, beamMat);
+                beam.position.set(x, 0.55, z);
+                mapGroup.add(beam);
+            });
+            
+            // Connections between nodes (network lines)
+            for (let i = 0; i < nodePositions.length; i++) {
+                for (let j = i + 1; j < nodePositions.length; j++) {
+                    if (Math.random() > 0.6) { // 40% chance of connection
+                        const points = [
+                            nodePositions[i].position.clone().add(new THREE.Vector3(0, 0.35, 0)),
+                            nodePositions[j].position.clone().add(new THREE.Vector3(0, 0.35, 0))
+                        ];
+                        
+                        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+                        const lineMat = new THREE.LineBasicMaterial({
+                            color: 0x00f0ff,
+                            transparent: true,
+                            opacity: 0.2
+                        });
+                        const line = new THREE.Line(lineGeo, lineMat);
+                        line.userData = {
+                            baseOpacity: 0.2,
+                            isActive: false
+                        };
+                        mapGroup.add(line);
+                        mapConnections.push(line);
+                    }
+                }
+            }
+            
+            // Scanning light beams (rotating)
+            for (let i = 0; i < 3; i++) {
+                const scanBeamGeo = new THREE.BoxGeometry(0.05, 0.02, 3);
+                const scanBeamMat = new THREE.MeshBasicMaterial({
+                    color: 0x00f0ff,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.AdditiveBlending
+                });
+                const scanBeam = new THREE.Mesh(scanBeamGeo, scanBeamMat);
+                scanBeam.position.y = 0.8 + i * 0.1;
+                scanBeam.userData = {
+                    rotationSpeed: 0.02 * (i + 1),
+                    baseY: 0.8 + i * 0.1
+                };
+                mapGroup.add(scanBeam);
+            }
+            
+            // Grid pattern on base
+            const gridHelper = new THREE.GridHelper(3, 20, 0x00f0ff, 0xb829dd);
+            gridHelper.position.y = 0.06;
+            gridHelper.material.transparent = true;
+            gridHelper.material.opacity = 0.15;
+            mapGroup.add(gridHelper);
+            
+            return mapGroup;
+        }
+        
+        // Activate holographic map projection
+        function activateHolographicMap() {
+            if (isMapActive || !droneInstance) return;
+            
+            isMapActive = true;
+            
+            // Position drone above map center
+            const mapCenter = new THREE.Vector3(0, 1.5, 0);
+            
+            // Move drone to map position
+            const flightDuration = 2000;
+            const startPos = droneInstance.position.clone();
+            const startTime = Date.now();
+            
+            const flyToMap = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / flightDuration, 1);
+                
+                // Ease out cubic
+                const eased = 1 - Math.pow(1 - progress, 3);
+                
+                droneInstance.position.lerpVectors(startPos, mapCenter, eased);
+                droneInstance.lookAt(0, 1.5, 0);
+                
+                // Pulse core during flight
+                const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.3;
+                droneInstance.userData.core.scale.setScalar(pulse);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(flyToMap);
+                } else {
+                    // Drone arrived - deploy map!
+                    deployMap();
+                }
+            };
+            
+            flyToMap();
+        }
+        
+        // Deploy holographic map from drone
+        function deployMap() {
+            // Create map below drone
+            holographicMap = createHolographicMap();
+            holographicMap.position.y = -1.5; // Below drone
+            
+            // Attach to drone or add to scene
+            scene.add(holographicMap);
+            
+            // Scale up animation
+            let scaleTime = 0;
+            const scaleDuration = 1500;
+            
+            const scaleInterval = setInterval(() => {
+                scaleTime += 50;
+                const progress = scaleTime / scaleDuration;
+                
+                // Exponential scale up
+                const scale = Math.pow(progress, 2) * 1.0;
+                holographicMap.scale.setScalar(scale);
+                holographicMap.materialOpacity = progress;
+                
+                // Rotate rings during deployment
+                holographicMap.children.forEach(child => {
+                    if (child.userData && child.userData.rotationSpeed) {
+                        child.rotation.z += child.userData.rotationSpeed;
+                    }
+                });
+                
+                if (scaleTime >= scaleDuration) {
+                    clearInterval(scaleInterval);
+                    holographicMap.scale.setScalar(1);
+                    // Start continuous rotation
+                    startMapAnimation();
+                }
+            }, 50);
+            
+            // Play deployment sound
+            playMapDeploySound();
+        }
+        
+        // Animate holographic map continuously
+        function startMapAnimation() {
+            const animateMap = () => {
+                if (!holographicMap || !isMapActive) return;
+                
+                const time = Date.now() * 0.001;
+                
+                // Rotate rings
+                holographicMap.children.forEach(child => {
+                    if (child.userData && child.userData.rotationSpeed) {
+                        child.rotation.z += child.userData.rotationSpeed;
+                        
+                        // Pulse opacity
+                        if (child.material && child.userData && child.userData.baseOpacity) {
+                            child.material.opacity = child.userData.baseOpacity + 
+                                Math.sin(time * 3 + child.userData.index || 0) * 0.1;
+                        }
+                    }
+                    
+                    // Pulse nodes
+                    if (child.userData && child.userData.originalY !== undefined) {
+                        child.position.y = child.userData.originalY + 
+                            Math.sin(time * 2 + child.userData.pulsePhase) * 0.05;
+                        child.material.opacity = 0.7 + Math.sin(time * 3) * 0.2;
+                    }
+                });
+                
+                // Rotate scanning beams
+                holographicMap.children.forEach(child => {
+                    if (child.userData && child.userData.rotationSpeed !== undefined && 
+                        child.geometry && child.geometry.type === 'BoxGeometry') {
+                        child.rotation.y += child.userData.rotationSpeed;
+                        child.position.y = child.userData.baseY + Math.sin(time * 2) * 0.1;
+                    }
+                });
+                
+                // Pulse connections
+                mapConnections.forEach((connection, index) => {
+                    connection.material.opacity = connection.userData.baseOpacity + 
+                        Math.sin(time * 2 + index) * 0.1;
+                });
+                
+                requestAnimationFrame(animateMap);
+            };
+            
+            animateMap();
+        }
+        
+        // Mouse interaction with holographic map
+        function setupMapInteraction() {
+            document.addEventListener('mousemove', (event) => {
+                if (!isMapActive || !holographicMap) return;
+                
+                // Raycaster for mouse detection
+                const mouse = new THREE.Vector2();
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                
+                // Check intersections with nodes
+                const intersects = raycaster.intersectObjects(mapNodes);
+                
+                if (intersects.length > 0) {
+                    const hoveredNode = intersects[0].object;
+                    
+                    if (!hoveredNode.userData.isHovered) {
+                        // Highlight node
+                        hoveredNode.userData.isHovered = true;
+                        hoveredNode.material.color.setHex(0x00ff88);
+                        hoveredNode.scale.setScalar(1.5);
+                        
+                        // Show tooltip
+                        showMapTooltip(hoveredNode.userData.name, event.clientX, event.clientY);
+                        
+                        // Highlight connected lines
+                        highlightConnections(hoveredNode);
+                        
+                        // Drone looks at selected node
+                        if (droneInstance) {
+                            droneInstance.lookAt(hoveredNode.position);
+                        }
+                    }
+                } else {
+                    // Reset all nodes
+                    mapNodes.forEach(node => {
+                        if (node.userData.isHovered) {
+                            node.userData.isHovered = false;
+                            node.material.color.setHex(0x00f0ff);
+                            node.scale.setScalar(1);
+                            
+                            // Hide tooltip
+                            const tooltip = document.querySelector('.map-tooltip');
+                            if (tooltip) tooltip.remove();
+                            
+                            // Reset connections
+                            resetConnections();
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Show tooltip for hovered node
+        function showMapTooltip(sectionName, mouseX, mouseY) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'map-tooltip';
+            tooltip.innerHTML = `
+                <div class="tooltip-content">
+                    <span class="tooltip-text">${sectionName}</span>
+                    <div class="tooltip-arrow"></div>
+                </div>
+            `;
+            document.body.appendChild(tooltip);
+            
+            tooltip.style.left = `${mouseX + 15}px`;
+            tooltip.style.top = `${mouseY - 15}px`;
+            
+            // Auto-remove after delay
+            setTimeout(() => {
+                tooltip.style.transition = 'opacity 0.3s ease';
+                tooltip.style.opacity = '0';
+                setTimeout(() => tooltip.remove(), 300);
+            }, 2000);
+        }
+        
+        // Highlight connections for hovered node
+        function highlightConnections(hoveredNode) {
+            mapConnections.forEach(connection => {
+                const positions = connection.geometry.attributes.position.array;
+                const nodePos = hoveredNode.position;
+                
+                // Check if connection is connected to this node
+                for (let i = 0; i < positions.length; i += 3) {
+                    const linePos = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
+                    if (linePos.distanceTo(nodePos) < 0.1) {
+                        connection.userData.isActive = true;
+                        connection.material.opacity = 0.8;
+                        connection.material.color.setHex(0x00ff88);
+                    }
+                }
+            });
+        }
+        
+        // Reset all connections
+        function resetConnections() {
+            mapConnections.forEach(connection => {
+                connection.userData.isActive = false;
+                connection.material.opacity = connection.userData.baseOpacity;
+                connection.material.color.setHex(0x00f0ff);
+            });
+        }
+        
+        // Map deployment sound
+        function playMapDeploySound() {
+            if (!window.AudioContext && !window.webkitAudioContext) return;
+            
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // Holographic activation sound
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 1);
+            
+            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 1.5);
+        }
+        
+        // Trigger drone launch on page load
+        setTimeout(launchDrone, 4000); // Launch 4 seconds after page load
+        
+        // After drone completes first loop, activate holographic map
+        setTimeout(activateHolographicMap, 25000); // 25 seconds (after ~1 full tour)
+        
+        // Setup map interaction
+        setupMapInteraction();
+        
+        // ========================================
+        // ANIMATION LOOP
+        // ========================================
+        camera.position.z = 6.5;
         const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
         scene.add(ambientLight);
         
@@ -1196,6 +2572,40 @@ document.addEventListener('DOMContentLoaded', () => {
             // LED strip animations (color cycling)
             ledCyanMaterial.color.setHSL(0.5 + Math.sin(time * 1.5) * 0.1, 1, 0.5);
             ledPurpleMaterial.color.setHSL(0.8 + Math.sin(time * 1.3) * 0.1, 1, 0.5);
+            
+            // ========================================
+            // DRONE ANIMATIONS
+            // ========================================
+            if (droneInstance && isDroneActive) {
+                // Update drone position
+                updateHolographicLabels();
+                updateDroneParticles();
+                
+                // Rotate anti-gravity ring continuously
+                droneInstance.userData.antiGravRing.rotation.z += 0.03;
+                droneInstance.userData.antiGravGlow.rotation.z += 0.03;
+                
+                // Pulse anti-gravity glow
+                const antiGravPulse = 0.5 + Math.sin(time * 3) * 0.2;
+                droneInstance.userData.antiGravGlow.material.opacity = antiGravPulse;
+                
+                // Rotate core ring
+                droneInstance.userData.coreRing.rotation.z += 0.05;
+                
+                // Pulse sensors
+                droneInstance.userData.sensors.forEach((sensor, i) => {
+                    sensor.material.opacity = 0.6 + Math.sin(time * 4 + i * 0.5) * 0.2;
+                });
+                
+                // Sweep scanning beam
+                droneInstance.userData.scanBeam.rotation.y = Math.sin(time * 2) * 0.3;
+                droneInstance.userData.scanBeam.material.opacity = 0.2 + Math.sin(time * 3) * 0.1;
+                
+                // Pulse accent strips
+                droneInstance.userData.accents.forEach((accent, i) => {
+                    accent.material.opacity = 0.3 + Math.sin(time * 5 + i * Math.PI) * 0.15;
+                });
+            }
             
             renderer.render(scene, camera);
         }
